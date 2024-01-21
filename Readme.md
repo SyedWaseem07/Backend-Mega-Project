@@ -20,3 +20,7 @@ This is my mega project to get a grip on backend by making a very complex backen
 - cors (which url can access our backend)
 - dotenv (to make env var accessible asap)
 - cookie-parser 
+
+# Approach
+- app 
+- Cors, .json(limit), .urlencoded(limit), static, cookieParser
