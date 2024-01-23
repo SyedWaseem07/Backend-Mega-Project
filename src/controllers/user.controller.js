@@ -185,10 +185,100 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 
 })
 
+const changeCurrentPassword = asyncHandler ( async (req, res, next) => {
+    const { oldPassword, newPassword } = req.body
+    
+    const user = await User.findById(req.user?._id)
+
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if(!isPasswordCorrect) throw new ApiError(400, "Invalid password")
+
+    user.password = newPassword
+    await user.save({ validateBeforeSave: false })
+
+    return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
+} )
+
+const getCurrentUser = asyncHandler( async (req, res) => {
+    return res.status(200, req.user , "Current user fetch successfull");
+
+} )
+
+const updateAccountDetails = asyncHandler( async (req, res, next) => {
+    const {fullName, email} = req.body
+
+    // if you want to update files, keep controllers and files aside
+    
+    if(!fullName || !email) throw new ApiError(400, "All feilds are required")
+
+    await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: {
+                fullName,
+                email
+            }
+        }, 
+        { new:true }
+    ).select("-password");
+
+    return res.status(200).json(new ApiResponse(200, user, "Account details updated successfully"));
+} )
+
+const updateUserAvatar = asyncHandler( async (req, res, next) => {
+    // frontend 
+    // multer locally upload
+    // uploadCloudinary
+    // db change
+    const localPath = req.file?.path
+
+    if(!localPath) return new ApiError(400, "Avatar is missing")
+
+    const avatar = await uploadCloudinary(localPath)
+
+    if(!avatar.url) return new ApiError(400, "Error while uploading on cloudinary")
+
+    const user = await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: { avatar: avatar.url }
+        },
+        {new: true}
+    ).select("-password")
+
+    return res.status(200).json(new ApiResponse(200, user, "Avatar updated successfully"));
+})
+
+const updateUserCoverImage = asyncHandler( async (req, res, next) => {
+    // frontend 
+    // multer locally upload
+    // uploadCloudinary
+    // db change
+    const localPath = req.file?.path
+
+    if(!localPath) return new ApiError(400, "Cover Image is missing")
+
+    const coverImage = await uploadCloudinary(localPath)
+
+    if(!coverImage.url) return new ApiError(400, "Error while uploading on cloudinary")
+
+    const user = await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: { coverImage: coverImage.url }
+        },
+        {new: true}
+    ).select("-password")
+
+    return res.status(200).json(new ApiResponse(200, user, "Cover Image updated successfully"));
+})
 
 export { 
     registerUser, 
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
 }
