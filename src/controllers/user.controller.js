@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -201,8 +202,7 @@ const changeCurrentPassword = asyncHandler ( async (req, res) => {
 } )
 
 const getCurrentUser = asyncHandler( async (req, res) => {
-    return res.status(200, req.user , "Current user fetch successfull");
-
+    return res.status(200).json(new ApiResponse(200, req.user, "Current User details fetched successfully"));
 } )
 
 const updateAccountDetails = asyncHandler( async (req, res) => {
@@ -212,7 +212,7 @@ const updateAccountDetails = asyncHandler( async (req, res) => {
     
     if(!fullName || !email) throw new ApiError(400, "All feilds are required")
 
-    await User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
                 fullName,
@@ -283,21 +283,21 @@ const getUserChannelProfile = asyncHandler( async (req, res) => {
         {
             $lookup: {
                 from: "subscriptions",
-                localFeild: "_id",
-                foreignFeild: "channel",
+                localField: "_id",
+                foreignField: "channel",
                 as: "subscribers"
             }
         },
         {
             $lookup: {
                 from: "subscriptions",
-                localFeild: "_id",
-                foreignFeild: "subscriber",
+                localField: "_id",
+                foreignField: "subscriber",
                 as: "subscribedTo"
             }
         },
         {
-            $addFeilds: {
+            $addFields: {
                 subscribersCount: {
                     $size: "$subscribers"
                 },
@@ -342,15 +342,15 @@ const getWatchHistory = asyncHandler( async (req, res) => {
         {
             $lookup: {
                 from: "videos",
-                localFeild: "watchHistory",
-                foreignFeild: "_id",
+                localField: "watchHistory",
+                foreignField: "_id",
                 as: "watchHistory",
                 pipeline: [
                     {
                         $lookup: {
                             from: "users",
-                            localFeild: "owner",
-                            foreignFeild: "_id",
+                            localField: "owner",
+                            foreignField: "_id",
                             as: "owner",
                             pipeline: [
                                 {
@@ -364,7 +364,7 @@ const getWatchHistory = asyncHandler( async (req, res) => {
                         }
                     },
                     {
-                        $addFeilds: {
+                        $addFields: {
                             owner: {
                                 $first: "$owner"
                             }
