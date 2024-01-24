@@ -185,7 +185,7 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 
 })
 
-const changeCurrentPassword = asyncHandler ( async (req, res, next) => {
+const changeCurrentPassword = asyncHandler ( async (req, res) => {
     const { oldPassword, newPassword } = req.body
     
     const user = await User.findById(req.user?._id)
@@ -205,7 +205,7 @@ const getCurrentUser = asyncHandler( async (req, res) => {
 
 } )
 
-const updateAccountDetails = asyncHandler( async (req, res, next) => {
+const updateAccountDetails = asyncHandler( async (req, res) => {
     const {fullName, email} = req.body
 
     // if you want to update files, keep controllers and files aside
@@ -225,7 +225,7 @@ const updateAccountDetails = asyncHandler( async (req, res, next) => {
     return res.status(200).json(new ApiResponse(200, user, "Account details updated successfully"));
 } )
 
-const updateUserAvatar = asyncHandler( async (req, res, next) => {
+const updateUserAvatar = asyncHandler( async (req, res) => {
     // frontend 
     // multer locally upload
     // uploadCloudinary
@@ -248,7 +248,7 @@ const updateUserAvatar = asyncHandler( async (req, res, next) => {
     return res.status(200).json(new ApiResponse(200, user, "Avatar updated successfully"));
 })
 
-const updateUserCoverImage = asyncHandler( async (req, res, next) => {
+const updateUserCoverImage = asyncHandler( async (req, res) => {
     // frontend 
     // multer locally upload
     // uploadCloudinary
@@ -270,6 +270,67 @@ const updateUserCoverImage = asyncHandler( async (req, res, next) => {
 
     return res.status(200).json(new ApiResponse(200, user, "Cover Image updated successfully"));
 })
+
+const getUserDetails = asyncHandler( async (req, res) => {
+    const { username } = req.params
+
+    if(!username?.trim()) throw new ApiError(400, "Username is missing")
+
+    User.aggregate([
+        {
+            $match: { username: username?.toLowerCase() }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localFeild: "_id",
+                foreignFeild: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localFeild: "_id",
+                foreignFeild: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFeilds: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                channelsSubscribedTo: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in : [req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                email: 1,
+                username: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscribersCount: 1,
+                channelsSubscribedTo: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+    if(!channel?.length) throw new ApiError(404, "Channel does not exist")
+
+    return res.status(200).json(new ApiResponse(200, channel[0], "Channel details fetched successfully"));
+} )
 
 export { 
     registerUser, 
