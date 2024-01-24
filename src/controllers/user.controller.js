@@ -271,12 +271,12 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, "Cover Image updated successfully"));
 })
 
-const getUserDetails = asyncHandler( async (req, res) => {
+const getUserChannelProfile = asyncHandler( async (req, res) => {
     const { username } = req.params
 
     if(!username?.trim()) throw new ApiError(400, "Username is missing")
 
-    User.aggregate([
+    const channel = await User.aggregate([
         {
             $match: { username: username?.toLowerCase() }
         },
@@ -332,6 +332,54 @@ const getUserDetails = asyncHandler( async (req, res) => {
     return res.status(200).json(new ApiResponse(200, channel[0], "Channel details fetched successfully"));
 } )
 
+const getWatchHistory = asyncHandler( async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user?._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localFeild: "watchHistory",
+                foreignFeild: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localFeild: "owner",
+                            foreignFeild: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        userName: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFeilds: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res.status(200).json(200, user[0].watchHistory, "Users watch history fetched successfully");
+} )
+
+
+
 export { 
     registerUser, 
     loginUser,
@@ -341,5 +389,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
 }
