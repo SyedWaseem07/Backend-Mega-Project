@@ -21,6 +21,5 @@ This is my mega project to get a grip on backend by making a very complex backen
 - dotenv (to make env var accessible asap)
 - cookie-parser 
 
-# Approach
-- app 
-- Cors, .json(limit), .urlencoded(limit), static, cookieParser
+# Model Link
+https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj

@@ -34,7 +34,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // return res
 
     const {fullName, username, email, password} = req.body
-    console.log(email); 
+
 
     if(
         [fullName, email, username, password].some((feild) => feild?.trim() === "")
@@ -131,8 +131,8 @@ const logoutUser = asyncHandler( async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1
             }
         },
         {
@@ -172,13 +172,13 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
             secure: true
         }
     
-        const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
     
         return res.status(200)
         .cookie("accessToken", accessToken)
-        .cookie("refreshToken", newRefreshToken)
+        .cookie("refreshToken", refreshToken)
         .json(new ApiResponse(200, {
-            accessToken, newRefreshToken
+            accessToken, refreshToken
         }, "Access token refreshed successfully"))
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid refresh token");
